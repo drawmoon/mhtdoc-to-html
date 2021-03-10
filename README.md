@@ -31,4 +31,4 @@ console.log(html);
 
 ## License
 
-[MIT](/license)
+[MIT](LICENSE)
