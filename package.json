@@ -1,9 +1,9 @@
 {
   "name": "mhtdoc-to-html",
-  "version": "0.0.1",
-  "description": "",
-  "main": "./src/mhtdoc-to-html.ts",
-  "types": "./dist/mhtdoc-to-html.d.ts",
+  "version": "0.0.2",
+  "description": "Convert Altchunks Word documents (.docx file) to HTML format.",
+  "main": "dist/mhtdoc-to-html.js",
+  "types": "dist/mhtdoc-to-html.d.ts",
   "dependencies": {
     "@types/adm-zip": "^0.4.33",
     "@types/jsdom": "^16.2.6",
