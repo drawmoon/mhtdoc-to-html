@@ -1,0 +1,62 @@
+{
+  "name": "mhtdoc-to-html",
+  "version": "0.0.1",
+  "description": "",
+  "main": "./src/mhtdoc-to-html.ts",
+  "types": "./dist/mhtdoc-to-html.d.ts",
+  "dependencies": {
+    "@types/adm-zip": "^0.4.33",
+    "@types/jsdom": "^16.2.6",
+    "adm-zip": "^0.5.3",
+    "jsdom": "^16.4.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^26.0.20",
+    "@types/node": "^14.14.31",
+    "jest": "^26.6.3",
+    "prettier": "^2.2.1",
+    "rimraf": "^3.0.2",
+    "ts-jest": "^26.5.3",
+    "typescript": "^4.2.3"
+  },
+  "scripts": {
+    "format": "prettier --write \"src/**/*.ts\" --write \"test/**/*.ts\"",
+    "build": "rimraf dist/ && tsc",
+    "test": "jest"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
+    "rootDir": "test",
+    "testRegex": ".*\\.test\\.ts$",
+    "transform": {
+      "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "collectCoverageFrom": [
+      "**/*.(t|j)s"
+    ],
+    "coverageDirectory": "../coverage",
+    "testEnvironment": "node"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/drawmoon/mhtdoc-to-html.git"
+  },
+  "keywords": [
+    "mht",
+    "docx",
+    "html",
+    "mht-to-html",
+    "mht-parse",
+    "mhtdoc-to-html"
+  ],
+  "author": "1340260725@qq.com",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/drawmoon/mhtdoc-to-html/issues"
+  },
+  "homepage": "https://github.com/drawmoon/mhtdoc-to-html#readme"
+}
