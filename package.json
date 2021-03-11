@@ -1,6 +1,6 @@
 {
   "name": "mhtdoc-to-html",
-  "version": "0.0.5",
+  "version": "0.1.0",
   "description": "Convert Altchunks Word documents (.docx file) to HTML format.",
   "main": "dist/mhtdoc-to-html.js",
   "types": "dist/mhtdoc-to-html.d.ts",
@@ -22,8 +22,7 @@
   "scripts": {
     "format": "prettier --write \"src/**/*.ts\" --write \"test/**/*.ts\"",
     "build": "rimraf dist/ && tsc",
-    "test": "jest",
-    "publish": "npm version patch && npm publish"
+    "test": "jest"
   },
   "jest": {
     "moduleFileExtensions": [
