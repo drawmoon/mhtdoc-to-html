@@ -45,13 +45,26 @@ export class MhtDocToHtml {
     throw new Error("'afchunk.mht' not found.");
   }
 
-  convertToHtml(imageConvert?: (imageBase64Buffer: Buffer) => string): string {
+  async convertToHtml(
+    imageConvert?: (imageBase64Buffer: Buffer) => Promise<string>
+  ): Promise<string> {
+    const doc = await this.convertToDocument(imageConvert);
+    if (!doc) {
+      return "";
+    }
+
+    return doc.body.innerHTML;
+  }
+
+  async convertToDocument(
+    imageConvert?: (imageBase64Buffer: Buffer) => Promise<string>
+  ): Promise<Document | undefined> {
     this.reset();
 
     const documentParts = this.parse();
 
     if (documentParts.length <= 0) {
-      return "";
+      return undefined;
     }
 
     const htmlPart = documentParts.find((p) =>
@@ -63,7 +76,7 @@ export class MhtDocToHtml {
     const dom = new JSDOM(html);
     const doc = dom.window.document;
 
-    doc.querySelectorAll("img").forEach((img) => {
+    doc.querySelectorAll("img").forEach(async (img) => {
       const imgPart = documentParts.find((p) => p.contentLocation === img.src);
       assert(imgPart);
 
@@ -71,13 +84,13 @@ export class MhtDocToHtml {
 
       if (imageConvert) {
         const imageBuffer = Buffer.from(imgBase64Str, "base64");
-        img.src = imageConvert(imageBuffer);
+        img.src = await imageConvert(imageBuffer);
       } else {
         img.src = `data:image/jpg;base64,${imgBase64Str}`;
       }
     });
 
-    return doc.body.innerHTML;
+    return doc;
   }
 
   private parse(): DocumentPart[] {
