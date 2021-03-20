@@ -1,7 +1,7 @@
-import AdmZip from "adm-zip";
-import { DocumentPart } from "./document-part";
-import { JSDOM } from "jsdom";
-import assert from "assert";
+import AdmZip from 'adm-zip';
+import { DocumentPart } from './document-part';
+import { JSDOM } from 'jsdom';
+import assert from 'assert';
 
 export class MhtDocToHtml {
   // afchunk.mht 文件的 Buffer
@@ -14,7 +14,7 @@ export class MhtDocToHtml {
   private _lineIndex = -1;
 
   // 分隔符
-  private _boundary: string = "--";
+  private _boundary: string = '--';
 
   constructor(buffer: Buffer) {
     if (!buffer) {
@@ -31,13 +31,13 @@ export class MhtDocToHtml {
     try {
       zip = new AdmZip(buffer);
     } catch (e) {
-      throw new Error("Unable to decompress.");
+      throw new Error('Unable to decompress.');
     }
 
     const entries = zip.getEntries();
 
     for (const entry of entries) {
-      if (entry.entryName === "word/afchunk.mht") {
+      if (entry.entryName === 'word/afchunk.mht') {
         return entry.getData();
       }
     }
@@ -46,18 +46,18 @@ export class MhtDocToHtml {
   }
 
   async convertToHtml(
-    imageConvert?: (imageBase64Buffer: Buffer) => Promise<string>
+    imageConvert?: (imageBase64Buffer: Buffer) => Promise<string>,
   ): Promise<string> {
     const doc = await this.convertToDocument(imageConvert);
     if (!doc) {
-      return "";
+      return '';
     }
 
     return doc.body.innerHTML;
   }
 
   async convertToDocument(
-    imageConvert?: (imageBase64Buffer: Buffer) => Promise<string>
+    imageConvert?: (imageBase64Buffer: Buffer) => Promise<string>,
   ): Promise<Document | undefined> {
     this.reset();
 
@@ -68,22 +68,22 @@ export class MhtDocToHtml {
     }
 
     const htmlPart = documentParts.find((p) =>
-      p.contentType.startsWith("text/html")
+      p.contentType.startsWith('text/html'),
     );
     assert(htmlPart);
 
-    const html = htmlPart.data.replace(/3D*/g, "");
+    const html = htmlPart.data.replace(/3D*/g, '');
     const dom = new JSDOM(html);
     const doc = dom.window.document;
 
-    doc.querySelectorAll("img").forEach(async (img) => {
+    doc.querySelectorAll('img').forEach(async (img) => {
       const imgPart = documentParts.find((p) => p.contentLocation === img.src);
       assert(imgPart);
 
       const imgBase64Str = imgPart.data;
 
       if (imageConvert) {
-        const imageBuffer = Buffer.from(imgBase64Str, "base64");
+        const imageBuffer = Buffer.from(imgBase64Str, 'base64');
         img.src = await imageConvert(imageBuffer);
       } else {
         img.src = `data:image/jpg;base64,${imgBase64Str}`;
@@ -96,9 +96,9 @@ export class MhtDocToHtml {
   private parse(): DocumentPart[] {
     const documentParts: DocumentPart[] = [];
 
-    let contentType = "";
-    let contentTransferEncoding = "";
-    let contentLocation = "";
+    let contentType = '';
+    let contentTransferEncoding = '';
+    let contentLocation = '';
     let data: string[] = [];
 
     const pushAndCreate = (): void => {
@@ -106,55 +106,55 @@ export class MhtDocToHtml {
         contentType: contentType,
         contentTransferEncoding: contentTransferEncoding,
         contentLocation: contentLocation,
-        data: data.join(""),
+        data: data.join(''),
       });
-      contentType = "";
-      contentTransferEncoding = "";
-      contentLocation = "";
+      contentType = '';
+      contentTransferEncoding = '';
+      contentLocation = '';
       data = [];
     };
 
     const parseLine = (line: string): void => {
-      let keyValue = this.getValueByKey("MIME-Version", line);
+      let keyValue = this.getValueByKey('MIME-Version', line);
       if (keyValue) {
-        if (keyValue !== "1.0") {
-          throw new Error("Unsupported version.");
+        if (keyValue !== '1.0') {
+          throw new Error('Unsupported version.');
         }
         return;
       }
 
-      keyValue = this.getValueByKey("    type", line);
+      keyValue = this.getValueByKey('    type', line);
       if (keyValue) {
         return;
       }
 
-      keyValue = this.getValueByKey("    boundary", line);
+      keyValue = this.getValueByKey('    boundary', line);
       if (keyValue) {
         this._boundary = `--${keyValue.trim()}`;
         return;
       }
 
       // 已经读取到分隔符，并且当前行不是空字符
-      if (this._boundary !== "--") {
-        keyValue = this.getValueByKey("Content-Type", line);
+      if (this._boundary !== '--') {
+        keyValue = this.getValueByKey('Content-Type', line);
         if (keyValue) {
           contentType = keyValue;
           return;
         }
 
-        keyValue = this.getValueByKey("    charset", line);
+        keyValue = this.getValueByKey('    charset', line);
         if (keyValue) {
           contentType += ` charset="${keyValue}"`;
           return;
         }
 
-        keyValue = this.getValueByKey("Content-Transfer-Encoding", line);
+        keyValue = this.getValueByKey('Content-Transfer-Encoding', line);
         if (keyValue) {
           contentTransferEncoding = keyValue;
           return;
         }
 
-        keyValue = this.getValueByKey("Content-Location", line);
+        keyValue = this.getValueByKey('Content-Location', line);
         if (keyValue) {
           contentLocation = keyValue;
           return;
@@ -181,7 +181,7 @@ export class MhtDocToHtml {
       // 判断是否读取到结束分隔符
       if (line === `${this._boundary}--`) {
         pushAndCreate();
-        this._boundary = "--";
+        this._boundary = '--';
         continue;
       }
 
@@ -203,19 +203,19 @@ export class MhtDocToHtml {
     };
 
     // 解析 'MIME-Version: 1.0' 格式的行
-    let index = line.indexOf(":");
+    let index = line.indexOf(':');
 
     if (index > -1) {
       return innerGetValue();
     }
 
     // 解析 'boundary="----=mhtDocumentPart"' 格式的行
-    index = line.indexOf("=");
+    index = line.indexOf('=');
 
     if (index > -1) {
       const value = innerGetValue();
 
-      return value?.replace(/^"+|\"+$/g, "") ?? null;
+      return value?.replace(/^"+|\"+$/g, '') ?? null;
     }
 
     return null;
@@ -238,7 +238,7 @@ export class MhtDocToHtml {
 
   private get value(): string {
     if (!this._linesCache || this._lineIndex >= this._linesCache.length) {
-      throw new Error("Trying to read beyond end of stream.");
+      throw new Error('Trying to read beyond end of stream.');
     }
 
     return this._linesCache[this._lineIndex];
@@ -246,9 +246,9 @@ export class MhtDocToHtml {
 
   private extractLines(
     buffer: Buffer,
-    options?: BufferEncoding | undefined
+    options?: BufferEncoding | undefined,
   ): string[] {
-    return buffer.toString(options ?? "utf-8").split(/(?:\r\n|\r|\n)/g);
+    return buffer.toString(options ?? 'utf-8').split(/(?:\r\n|\r|\n)/g);
   }
 
   private reset() {
@@ -256,6 +256,6 @@ export class MhtDocToHtml {
 
     this._lineIndex = -1;
 
-    this._boundary = "--";
+    this._boundary = '--';
   }
 }
