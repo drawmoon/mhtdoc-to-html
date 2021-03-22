@@ -14,7 +14,7 @@ export class MhtDocToHtml {
   private _lineIndex = -1;
 
   // 分隔符
-  private _boundary: string = '--';
+  private _boundary = '--';
 
   constructor(buffer: Buffer) {
     if (!buffer) {
