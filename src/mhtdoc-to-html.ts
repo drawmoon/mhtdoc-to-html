@@ -18,7 +18,7 @@ export class MhtDocToHtml {
 
   constructor(buffer: Buffer) {
     if (!buffer) {
-      throw new Error("'buffer' is undefuned.");
+      throw new Error("'buffer' is undefined.");
     }
 
     // 提取 afchunk.mht 文件的 Buffer
@@ -45,10 +45,8 @@ export class MhtDocToHtml {
     throw new Error("'afchunk.mht' not found.");
   }
 
-  async convertToHtml(
-    imageConvert?: (imageBase64Buffer: Buffer) => Promise<string>,
-  ): Promise<string> {
-    const doc = await this.convertToDocument(imageConvert);
+  convertToHtml(imageConvert?: (imageBase64Buffer: Buffer) => string): string {
+    const doc = this.convertToDocument(imageConvert);
     if (!doc) {
       return '';
     }
@@ -56,9 +54,9 @@ export class MhtDocToHtml {
     return doc.body.innerHTML;
   }
 
-  async convertToDocument(
-    imageConvert?: (imageBase64Buffer: Buffer) => Promise<string>,
-  ): Promise<Document | undefined> {
+  convertToDocument(
+    imageConvert?: (imageBase64Buffer: Buffer) => string,
+  ): Document | undefined {
     this.reset();
 
     const documentParts = this.parse();
@@ -76,7 +74,7 @@ export class MhtDocToHtml {
     const dom = new JSDOM(html);
     const doc = dom.window.document;
 
-    doc.querySelectorAll('img').forEach(async (img) => {
+    doc.querySelectorAll('img').forEach((img) => {
       const imgPart = documentParts.find((p) => p.contentLocation === img.src);
       assert(imgPart);
 
@@ -84,7 +82,7 @@ export class MhtDocToHtml {
 
       if (imageConvert) {
         const imageBuffer = Buffer.from(imgBase64Str, 'base64');
-        img.src = await imageConvert(imageBuffer);
+        img.src = imageConvert(imageBuffer);
       } else {
         img.src = `data:image/jpg;base64,${imgBase64Str}`;
       }

@@ -1,12 +1,12 @@
-import path from 'path';
-import fs from 'fs';
+import { join } from 'path';
+import { writeFileSync, readFileSync, mkdtempSync } from 'fs';
 import { MhtDocToHtml } from '../src/mhtdoc-to-html';
 import { base64Str } from './base64-str';
 
 test('docx', async () => {
-  const docxPath = path.join(__dirname, 'test-data/mht_document01.docx');
+  const docxPath = join(__dirname, 'test-data/mht_document01.docx');
 
-  const buffer = fs.readFileSync(docxPath);
+  const buffer = readFileSync(docxPath);
 
   const converter = new MhtDocToHtml(buffer);
 
@@ -16,9 +16,9 @@ test('docx', async () => {
 });
 
 test('docx with image', async () => {
-  const docxPath = path.join(__dirname, 'test-data/mht_document02.docx');
+  const docxPath = join(__dirname, 'test-data/mht_document02.docx');
 
-  const buffer = fs.readFileSync(docxPath);
+  const buffer = readFileSync(docxPath);
 
   const converter = new MhtDocToHtml(buffer);
 
@@ -30,17 +30,17 @@ test('docx with image', async () => {
 });
 
 test('convert image', async () => {
-  const tempdir = fs.mkdtempSync('tmp_');
-  const filepath = path.join(tempdir, 'image.jpg');
+  const tempdir = mkdtempSync('tmp_');
+  const filepath = join(tempdir, 'image.jpg');
 
-  const docxPath = path.join(__dirname, 'test-data/mht_document02.docx');
+  const docxPath = join(__dirname, 'test-data/mht_document02.docx');
 
-  const buffer = fs.readFileSync(docxPath);
+  const buffer = readFileSync(docxPath);
 
   const converter = new MhtDocToHtml(buffer);
 
-  const html = await converter.convertToHtml(async (imgBuffer) => {
-    fs.writeFileSync(filepath, imgBuffer, 'base64');
+  const html = await converter.convertToHtml((imgBuffer) => {
+    writeFileSync(filepath, imgBuffer, 'base64');
     return filepath;
   });
 
