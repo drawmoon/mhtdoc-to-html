@@ -1,45 +1,44 @@
 import { join } from 'path';
 import { writeFileSync, readFileSync, mkdtempSync } from 'fs';
 import { MhtDocToHtml } from '../src/mhtdoc-to-html';
-import { base64Str } from './base64-str';
 
-test('docx', async () => {
+test('testConvertDocx', () => {
   const docxPath = join(__dirname, 'test-data/mht_document01.docx');
-
   const buffer = readFileSync(docxPath);
 
   const converter = new MhtDocToHtml(buffer);
-
-  const html = await converter.convertToHtml();
+  const html = converter.convertToHtml();
 
   expect(html).toEqual('<p>Hello World!</p>');
 });
 
-test('docx with image', async () => {
+test('testConvertDocxWithImages', () => {
   const docxPath = join(__dirname, 'test-data/mht_document02.docx');
-
   const buffer = readFileSync(docxPath);
 
-  const converter = new MhtDocToHtml(buffer);
+  const base64StrPath = join(
+    __dirname,
+    'test-data/mht_document02_imgBaseStr.txt',
+  );
+  const base64Str = readFileSync(base64StrPath, 'utf-8').trim();
 
-  const html = await converter.convertToHtml();
+  const converter = new MhtDocToHtml(buffer);
+  const html = converter.convertToHtml();
 
   expect(html).toEqual(
     `<p>Hello World!</p><figure class="image"><img src="data:image/jpg;base64,${base64Str}"></figure><p>&nbsp;</p>`,
   );
 });
 
-test('convert image', async () => {
-  const tempdir = mkdtempSync('tmp_');
-  const filepath = join(tempdir, 'image.jpg');
-
+test('testConvertDocxAndSaveImage', () => {
   const docxPath = join(__dirname, 'test-data/mht_document02.docx');
-
   const buffer = readFileSync(docxPath);
 
-  const converter = new MhtDocToHtml(buffer);
+  const tempDir = mkdtempSync('tmp_');
+  const filepath = join(tempDir, 'image.jpg');
 
-  const html = await converter.convertToHtml((imgBuffer) => {
+  const converter = new MhtDocToHtml(buffer);
+  const html = converter.convertToHtml((imgBuffer) => {
     writeFileSync(filepath, imgBuffer, 'base64');
     return filepath;
   });

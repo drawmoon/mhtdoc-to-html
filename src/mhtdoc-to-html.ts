@@ -70,7 +70,10 @@ export class MhtDocToHtml {
     );
     assert(htmlPart);
 
-    const html = htmlPart.data.replace(/3D*/g, '');
+    const regex = /<[^>]*=(?<stain>3D)+"\S+"\s*\/?>/g;
+    const html = htmlPart.data.replace(regex, (sub, stain) => {
+      return sub.replace(new RegExp(`${stain}+`, 'g'), '');
+    });
     const dom = new JSDOM(html);
     const doc = dom.window.document;
 
