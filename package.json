@@ -5,8 +5,8 @@
   "main": "dist/mhtdoc-to-html.js",
   "types": "dist/mhtdoc-to-html.d.ts",
   "dependencies": {
-    "adm-zip": "^0.5.3",
-    "jsdom": "^16.7.0"
+    "adm-zip": "^0.5.9",
+    "jsdom": "^18.1.1"
   },
   "devDependencies": {
     "@types/adm-zip": "^0.4.34",
