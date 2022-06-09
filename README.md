@@ -1,5 +1,7 @@
 # mhtdoc-to-html
 
+[![NPM Version][npm-image]][npm-url]
+
 Convert Altchunks Word documents (.docx file) to HTML format.
 
 ## Installing
@@ -32,3 +34,6 @@ console.log(html);
 ## License
 
 [MIT](LICENSE)
+
+[npm-image]: https://img.shields.io/npm/v/mhtdoc-to-html.svg
+[npm-url]: https://npmjs.org/package/mhtdoc-to-html

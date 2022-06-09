@@ -1,52 +1,60 @@
 import AdmZip from 'adm-zip';
-import { DocumentPart } from './document-part';
+import { DocumentPart } from './interfaces';
 import { JSDOM } from 'jsdom';
 import assert from 'assert';
 
 export class MhtDocToHtml {
-  // afchunk.mht 文件的 Buffer
+  /**
+   * afchunk.mht 文件的 Buffer
+   */
   private readonly _buffer: Buffer;
 
-  // afchunk.mht 内容缓存
-  private _linesCache: string[] | undefined = undefined;
+  /**
+   * afchunk.mht 内容缓存
+   */
+  private _linesCache?: string[] | undefined = undefined;
 
-  // 当前读取的行数
+  /**
+   * 当前读取的行数
+   */
   private _lineIndex = -1;
 
-  // 分隔符
+  /**
+   * 分隔符
+   */
   private _boundary = '--';
 
-  constructor(buffer: Buffer) {
-    if (!buffer) {
-      throw new Error("'buffer' is undefined.");
+  constructor(buf: Buffer) {
+    if (!buf) {
+      throw new Error('Buffer is undefined.');
     }
 
     // 提取 afchunk.mht 文件的 Buffer
-    this._buffer = this.extractMhtBuffer(buffer);
+    this._buffer = this.extract(buf);
   }
 
-  private extractMhtBuffer(buffer: Buffer): Buffer {
-    let zip: AdmZip;
-
-    try {
-      zip = new AdmZip(buffer);
-    } catch (e) {
-      throw new Error('Unable to decompress.');
-    }
-
-    const entries = zip.getEntries();
-
-    for (const entry of entries) {
-      if (entry.entryName === 'word/afchunk.mht') {
-        return entry.getData();
-      }
-    }
-
-    throw new Error("'afchunk.mht' not found.");
-  }
-
-  convertToHtml(imageConvert?: (imageBase64Buffer: Buffer) => string): string {
+  /**
+   * 将文档转换为 HTML 格式的字符形式
+   * @param imageConvert
+   * @example
+   * ```
+   * import { writeFileSync, readFileSync } from 'fs';
+   *
+   * const buf = readFileSync('/app/document.docx');
+   *
+   * const imageConvert = (buf: Buffer) => {
+   *    const imgPath = '/app/images/img1.png';
+   *    writeFileSync(imgPath, buf, 'base64');
+   *    return imgPath;
+   * };
+   * const converter = new MhtDocToHtml(buf);
+   * const html = converter.convertToHtml(imageConvert);
+   * ```
+   * @returns {String} HTML 格式的字符形式
+   */
+  public convertToHtml(imageConvert?: (base64Buf: Buffer) => string): string {
     const doc = this.convertToDocument(imageConvert);
+
     if (!doc) {
       return '';
     }
@@ -54,8 +62,27 @@ export class MhtDocToHtml {
     return doc.body.innerHTML;
   }
 
-  convertToDocument(
-    imageConvert?: (imageBase64Buffer: Buffer) => string,
+  /**
+   * 将文档转换为 Document
+   * @param imageConvert
+   * @example
+   * ```
+   * import { writeFileSync, readFileSync } from 'fs';
+   *
+   * const buf = readFileSync('/app/document.docx');
+   *
+   * const imageConvert = (buf: Buffer) => {
+   *    const imgPath = '/app/images/img1.png';
+   *    writeFileSync(imgPath, buf, 'base64');
+   *    return imgPath;
+   * };
+   * const converter = new MhtDocToHtml(buf);
+   * const doc = converter.convertToDocument(imageConvert);
+   * ```
+   * @returns {Document}
+   */
+  public convertToDocument(
+    imageConvert?: (base64Buf: Buffer) => string,
   ): Document | undefined {
     this.reset();
 
@@ -74,6 +101,7 @@ export class MhtDocToHtml {
     const html = htmlPart.data.replace(regex, (sub, stain) => {
       return sub.replace(new RegExp(`${stain}+`, 'g'), '');
     });
+
     const dom = new JSDOM(html);
     const doc = dom.window.document;
 
@@ -81,17 +109,35 @@ export class MhtDocToHtml {
       const imgPart = documentParts.find((p) => p.contentLocation === img.src);
       assert(imgPart);
 
-      const imgBase64Str = imgPart.data;
-
       if (imageConvert) {
-        const imageBuffer = Buffer.from(imgBase64Str, 'base64');
-        img.src = imageConvert(imageBuffer);
+        const imageBuf = Buffer.from(imgPart.data, 'base64');
+        img.src = imageConvert(imageBuf);
       } else {
-        img.src = `data:image/jpg;base64,${imgBase64Str}`;
+        img.src = `data:image/jpg;base64,${imgPart.data}`;
       }
     });
 
     return doc;
+  }
+
+  private extract(buf: Buffer): Buffer {
+    let zip: AdmZip;
+
+    try {
+      zip = new AdmZip(buf);
+    } catch (e) {
+      throw new Error('Unable to decompress.');
+    }
+
+    const entries = zip.getEntries();
+
+    for (const entry of entries) {
+      if (entry.entryName === 'word/afchunk.mht') {
+        return entry.getData();
+      }
+    }
+
+    throw new Error("'afchunk.mht' not found.");
   }
 
   private parse(): DocumentPart[] {
@@ -102,7 +148,7 @@ export class MhtDocToHtml {
     let contentLocation = '';
     let data: string[] = [];
 
-    const pushAndCreate = (): void => {
+    const safeAdd = (): void => {
       documentParts.push({
         contentType: contentType,
         contentTransferEncoding: contentTransferEncoding,
@@ -167,7 +213,7 @@ export class MhtDocToHtml {
     };
 
     while (this.read()) {
-      const line = this.value;
+      const line = this.current;
 
       if (!line) {
         continue;
@@ -175,13 +221,13 @@ export class MhtDocToHtml {
 
       // 判断是否读取到开始分隔符
       if (line === this._boundary) {
-        pushAndCreate();
+        safeAdd();
         continue;
       }
 
       // 判断是否读取到结束分隔符
       if (line === `${this._boundary}--`) {
-        pushAndCreate();
+        safeAdd();
         this._boundary = '--';
         continue;
       }
@@ -237,14 +283,6 @@ export class MhtDocToHtml {
     return true;
   }
 
-  private get value(): string {
-    if (!this._linesCache || this._lineIndex >= this._linesCache.length) {
-      throw new Error('Trying to read beyond end of stream.');
-    }
-
-    return this._linesCache[this._lineIndex];
-  }
-
   private extractLines(
     buffer: Buffer,
     options?: BufferEncoding | undefined,
@@ -252,11 +290,17 @@ export class MhtDocToHtml {
     return buffer.toString(options ?? 'utf-8').split(/(?:\r\n|\r|\n)/g);
   }
 
-  private reset() {
+  private get current(): string {
+    if (!this._linesCache || this._lineIndex >= this._linesCache.length) {
+      throw new Error('Trying to read beyond end of stream.');
+    }
+
+    return this._linesCache[this._lineIndex];
+  }
+
+  private reset(): void {
     this._linesCache = undefined;
-
     this._lineIndex = -1;
-
     this._boundary = '--';
   }
 }
